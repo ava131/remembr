@@ -9,9 +9,16 @@ from PIL import Image
 import numpy as np
 from remembr.captioners.captioner import Captioner
 
-from llava.constants import (DEFAULT_IM_END_TOKEN, DEFAULT_IM_START_TOKEN,
+try:
+    from llava.constants import (DEFAULT_IM_END_TOKEN, DEFAULT_IM_START_TOKEN,
                              DEFAULT_IMAGE_TOKEN, IMAGE_PLACEHOLDER,
                              IMAGE_TOKEN_INDEX)
+except ImportError:
+    DEFAULT_IM_START_TOKEN = "<im_start>"
+    DEFAULT_IM_END_TOKEN = "<im_end>"
+    IMAGE_PLACEHOLDER = "<image-placeholder>"
+    IMAGE_TOKEN_INDEX = -200 
+    DEFAULT_IMAGE_TOKEN = "<image>"
 from llava.conversation import SeparatorStyle, conv_templates
 from llava.mm_utils import (KeywordsStoppingCriteria, get_model_name_from_path,
                             process_images, tokenizer_image_token)
@@ -77,6 +84,11 @@ class VILACaptioner(Captioner):
         disable_torch_init()
 
         qs = args.query
+
+        if "<video>" in qs:
+            image_tokens = "<image>" * len(images)
+            qs = qs.replace("<video>", image_tokens)
+
         image_token_se = DEFAULT_IM_START_TOKEN + DEFAULT_IMAGE_TOKEN + DEFAULT_IM_END_TOKEN
         if IMAGE_PLACEHOLDER in qs:
             if self.model.config.mm_use_im_start_end:
@@ -98,24 +110,35 @@ class VILACaptioner(Captioner):
         conv = conv_templates[args.conv_mode].copy()
         conv.append_message(conv.roles[0], qs)
         conv.append_message(conv.roles[1], None)
-        prompt = conv.get_prompt()
+        prompt = conv.get_prompt()   
 
         
             
-            
+        # processed_images = []
+        # for img in images:
+        #     t = process_images([img], self.image_processor, self.model.config)
+        #     if t.ndim == 4:
+        #         t = t.squeeze(0) #减少一维
+        #     processed_images.append(t)    
         images_tensor = process_images(images, self.image_processor, self.model.config).to(self.model.device, dtype=torch.float16)
+        images_list = list(torch.unbind(images_tensor, dim=0))
         input_ids = tokenizer_image_token(prompt, self.tokenizer, IMAGE_TOKEN_INDEX, return_tensors="pt").unsqueeze(0).cuda()
 
         stop_str = conv.sep if conv.sep_style != SeparatorStyle.TWO else conv.sep2
         keywords = [stop_str]
         stopping_criteria = KeywordsStoppingCriteria(keywords, self.tokenizer, input_ids)
 
+        vision_tower = self.model.get_vision_tower()
+        media_config = {'image': vision_tower.config.to_dict()}
+
+
         with torch.inference_mode():
             output_ids = self.model.generate(
                 input_ids,
-                images=[
-                    images_tensor,
-                ],
+                media={
+                    'image': images_list,
+                },
+                media_config=media_config,
                 do_sample=True if args.temperature > 0 else False,
                 temperature=args.temperature,
                 top_p=args.top_p,

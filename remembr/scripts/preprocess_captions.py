@@ -62,7 +62,10 @@ def run_video_in_segs(args):
     # captions_location = f'./data/{SEQUENCE_ID}/captions'
     captions_location = args.out_path
     if os.path.exists(captions_location):
-        exit()
+        if len(os.listdir(captions_location)) > 0:
+            exit()
+        else:
+            print(f"Overwriting: {captions_location} exists but is empty. Continuing...")
         # shutil.rmtree(captions_location, ignore_errors=True)
     os.makedirs(captions_location, exist_ok=True)
 

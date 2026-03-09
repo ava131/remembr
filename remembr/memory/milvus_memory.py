@@ -8,7 +8,8 @@ import numpy as np
 
 from remembr.memory.memory import Memory, MemoryItem
 
-from langchain_community.vectorstores import Milvus
+# from langchain_community.vectorstores import Milvus
+from langchain_milvus import Milvus
 from langchain_huggingface import HuggingFaceEmbeddings
 
 from pymilvus import connections, FieldSchema, CollectionSchema, DataType, Collection, utility
@@ -29,7 +30,7 @@ class MilvusWrapper:
         utility.drop_collection(self.collection_name)
 
     def connect_to_milvus_collection(self, collection_name, dim, address='127.0.0.1', port=19530, drop_collection=False):
-        connections.connect(host=address, port=port)
+        connections.connect(uri="./remembr.db")
         
         if drop_collection:
             utility.drop_collection(collection_name)
@@ -145,7 +146,7 @@ class MilvusMemory(Memory):
 
         text_vector_db = Milvus(
             self.embedder,
-            connection_args={"host": self.db_ip, "port": self.db_port},
+            connection_args={"uri": "./milvus_lite.db"},
             collection_name=self.db_collection_name,
             vector_field='text_embedding',
             text_field='caption',
@@ -155,7 +156,7 @@ class MilvusMemory(Memory):
 
         self.position_vector_db = Milvus(
             self.embedder, # we will ignore this
-            connection_args={"host": self.db_ip, "port": self.db_port},
+            connection_args={"uri": "./milvus_lite.db"},
             collection_name=self.db_collection_name,
             vector_field='position',
             text_field='caption',
@@ -163,7 +164,7 @@ class MilvusMemory(Memory):
 
         self.time_vector_db = Milvus(
             self.embedder, # we will ignore this
-            connection_args={"host": self.db_ip, "port": self.db_port},
+            connection_args={"uri": "./milvus_lite.db"},
             collection_name=self.db_collection_name,
             vector_field='time',
             text_field='caption',
