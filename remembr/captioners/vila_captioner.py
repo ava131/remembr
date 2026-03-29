@@ -122,7 +122,7 @@ class VILACaptioner(Captioner):
         #     processed_images.append(t)    
         images_tensor = process_images(images, self.image_processor, self.model.config).to(self.model.device, dtype=torch.float16)
         images_list = list(torch.unbind(images_tensor, dim=0))
-        input_ids = tokenizer_image_token(prompt, self.tokenizer, IMAGE_TOKEN_INDEX, return_tensors="pt").unsqueeze(0).cuda()
+        input_ids = tokenizer_image_token(prompt, self.tokenizer, return_tensors="pt").unsqueeze(0).cuda()
 
         stop_str = conv.sep if conv.sep_style != SeparatorStyle.TWO else conv.sep2
         keywords = [stop_str]
@@ -154,7 +154,7 @@ class VILACaptioner(Captioner):
         if outputs.endswith(stop_str):
             outputs = outputs[: -len(stop_str)]
         outputs = outputs.strip()
-        # print(outputs)
+        print('1233',outputs)
 
         return outputs
 

@@ -52,4 +52,6 @@ MANIFEST
 profile_default/
 ipython_config.py
 
-.remembr/
+
+.vscode/
+.idea/
