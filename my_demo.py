@@ -6,7 +6,7 @@ from remembr.memory.memory import MemoryItem
 from remembr.agents.remembr_agent import ReMEmbRAgent
 
 # 1. 填入你的大语言模型 API Key (这里以 OpenAI 为例，你也可以换成其他的)
-os.environ["OPENAI_API_KEY"] = "sk-c817bfb516e34a1c920ece1f10aaac55"
+os.environ["OPENAI_API_KEY"] = "123"
 
 # 2. 连接本地免安装数据库 (Milvus Lite)
 print("正在连接本地记忆库...")
